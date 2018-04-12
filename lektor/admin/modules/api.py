@@ -1,5 +1,6 @@
 import os
 import posixpath
+import subprocess
 
 import click
 from flask import Blueprint, jsonify, request, g, current_app
@@ -280,10 +281,24 @@ def get_servers():
 
 @bp.route('/build', methods=['POST'])
 def trigger_build():
-    builder = current_app.lektor_info.get_builder()
-    builder.build_all()
-    builder.prune()
-    return jsonify(okay=True)
+    # poor man's build in subprocess...
+    @eventstream
+    def generator():
+        cmd = ["lektor", "build"]
+        try:
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT,
+                                    universal_newlines=True)
+            for line in iter(proc.stdout.readline, ""):
+                yield {"line": line}
+            proc.stdout.close()
+            return_code = proc.wait()
+            if return_code != 0:
+                yield {'msg': 'Error: lektor build returned %d' % return_code}
+        except Exception as e:
+                yield {'msg': 'Error: %s' % e}
+
+    return generator()
 
 
 @bp.route('/clean', methods=['POST'])

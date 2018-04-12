@@ -71,10 +71,18 @@ class Publish extends Component {
       log: [],
       currentState: 'BUILDING'
     })
-    utils.apiRequest('/build', {
-      method: 'POST'
-    }, makeRichPromise).then((resp) => {
-      this._beginPublish()
+
+    const es = new EventSource(utils.getApiUrl('/build'))
+    es.addEventListener('message', (event) => {
+      const data = JSON.parse(event.data)
+      if (data === null) {
+        es.close()
+        this._beginPublish()
+      } else {
+        this.setState({
+          log: this.state.log.concat(data.msg)
+        })
+      }
     })
   }
 

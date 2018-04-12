@@ -18,5 +18,7 @@ def eventstream(f):
             for event in chain(f(*args, **kwargs), (None,)):
                 yield 'data: %s\n\n' % json.dumps(event)
         return Response(generate(), mimetype='text/event-stream',
+                        # avoid buffering by proxy servers
+                        headers={'X-Accel-Buffering': 'no'},
                         direct_passthrough=True)
     return update_wrapper(new_func, f)
