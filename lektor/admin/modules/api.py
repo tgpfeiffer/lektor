@@ -290,7 +290,7 @@ def trigger_build():
                                     stderr=subprocess.STDOUT,
                                     universal_newlines=True)
             for line in iter(proc.stdout.readline, ""):
-                yield {"msg": line}
+                yield {"msg": line.rstrip("\n")}
             proc.stdout.close()
             return_code = proc.wait()
             if return_code != 0:
