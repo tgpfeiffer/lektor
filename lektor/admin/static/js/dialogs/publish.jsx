@@ -73,15 +73,21 @@ class Publish extends Component {
     })
 
     const es = new EventSource(utils.getApiUrl('/build'))
+    let err = false
     es.addEventListener('message', (event) => {
       const data = JSON.parse(event.data)
       if (data === null) {
         es.close()
-        this._beginPublish()
+        if (!err) {
+          this._beginPublish()
+        }
       } else {
         this.setState({
           log: this.state.log.concat(data.msg)
         })
+        if (data.msg.indexOf("Error") != -1) {
+          err = true
+        }
       }
     })
   }

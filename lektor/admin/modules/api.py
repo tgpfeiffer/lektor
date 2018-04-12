@@ -279,7 +279,7 @@ def get_servers():
                                   key=lambda x: x['name'].lower()))
 
 
-@bp.route('/build', methods=['POST'])
+@bp.route('/build')
 def trigger_build():
     # poor man's build in subprocess...
     @eventstream
@@ -290,7 +290,7 @@ def trigger_build():
                                     stderr=subprocess.STDOUT,
                                     universal_newlines=True)
             for line in iter(proc.stdout.readline, ""):
-                yield {"line": line}
+                yield {"msg": line}
             proc.stdout.close()
             return_code = proc.wait()
             if return_code != 0:
