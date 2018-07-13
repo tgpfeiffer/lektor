@@ -3,6 +3,15 @@
 matrix:
   fast_finish: true
 
+branches:
+  only:
+    - master
+
+# Cache imagemagick
+cache:
+  - C:\ProgramData\chocolatey\bin -> appveyor.yml
+  - C:\ProgramData\chocolatey\lib -> appveyor.yml
+
 
 environment:
   matrix:
@@ -13,13 +22,7 @@ environment:
       NODE_JS_VERSION: "6"
     - PYTHON: "C:\\Python36"
       NODE_JS_VERSION: "6"
-    # Node 7
-    - PYTHON: "C:\\Python27"
-      NODE_JS_VERSION: "7"
-    - PYTHON: "C:\\Python35"
-      NODE_JS_VERSION: "7"
-    - PYTHON: "C:\\Python36"
-      NODE_JS_VERSION: "7"
+    # Node 7 is End-of-Life
     # Node 8
     - PYTHON: "C:\\Python27"
       NODE_JS_VERSION: "8"
@@ -27,6 +30,13 @@ environment:
       NODE_JS_VERSION: "8"
     - PYTHON: "C:\\Python36"
       NODE_JS_VERSION: "8"
+    # Node 9
+    - PYTHON: "C:\\Python27"
+      NODE_JS_VERSION: "9"
+    - PYTHON: "C:\\Python35"
+      NODE_JS_VERSION: "9"
+    - PYTHON: "C:\\Python36"
+      NODE_JS_VERSION: "9"
 
 
 install:
@@ -36,7 +46,7 @@ install:
   - "%PYTHON%\\python.exe -m pip install --upgrade pytest"
   - "%PYTHON%\\python.exe -m pip install --upgrade codecov"
   - "%PYTHON%\\python.exe -m pip install --editable .[test]"
-  # Get the latest stable version of Node.js or io.js
+  # Get the latest stable version of Node.js
   - ps: Install-Product node $env:NODE_JS_VERSION
   # Install node modules
   - cd lektor\admin
@@ -54,7 +64,7 @@ test_script:
   # Run Python tests
   - "%PYTHON%\\python.exe --version"
   - "%PYTHON%\\python.exe -m pip list"
-  - "%PYTHON%\\Scripts\\pytest.exe . --tb=short -v --cov=lektor"
+  - "%PYTHON%\\Scripts\\pytest.exe . --tb=long -svv --cov=lektor"
   # Run JS tests
   - cd lektor\admin
   - node --version
@@ -62,3 +72,6 @@ test_script:
   - npm list
   - npm run lint
   - npm test
+
+# on_failure:
+#   - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))

@@ -3,6 +3,25 @@ Changelog
 
 These are all the changes in Lektor since the first public release.
 
+3.1.2
+
+Release date TBD
+
+- Added the ability to sort child pages in admin according to models.
+- Better image handling.
+- Lektor can now be ran with `python -m lektor`
+- New plugins now come with a more full featured setup.py
+
+3.1.1
+-----
+
+Release date 18th of April 2018
+
+- Better Image dimension detection.
+- Fix backwards compatibility with thumbnail generation.
+- Adding safety check when runnning new build in non-empty dir since that could delete data.
+- Adding command aliases.
+
 3.1.0
 -----
 

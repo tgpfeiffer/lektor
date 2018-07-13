@@ -9,7 +9,6 @@ import exifread
 
 from lektor.utils import get_dependent_url, portable_popen, locate_executable
 from lektor.reporter import reporter
-from lektor.uilink import BUNDLE_BIN_PATH
 from lektor._compat import iteritems, text_type, PY2
 
 
@@ -261,6 +260,20 @@ def get_svg_info(fp):
     return 'unknown', None, None
 
 
+# see http://www.w3.org/Graphics/JPEG/itu-t81.pdf
+# Table B.1 – Marker code assignments (page 32/36)
+_JPEG_SOF_MARKERS = (
+    # non-differential, Hufmann-coding
+    0xc0, 0xc1, 0xc2, 0xc3,
+    # differential, Hufmann-coding
+    0xc5, 0xc6, 0xc7,
+    # non-differential, arithmetic-coding
+    0xc9, 0xca, 0xcb,
+    # differential, arithmetic-coding
+    0xcd, 0xce, 0xcf,
+)
+
+
 def get_image_info(fp):
     """Reads some image info from a file descriptor."""
     head = fp.read(32)
@@ -282,34 +295,49 @@ def get_image_info(fp):
     elif fmt == 'gif':
         width, height = struct.unpack('<HH', head[6:10])
     elif fmt == 'jpeg':
-        # note: some of the markers in the range
-        # ffc0 - ffcf are not SOF markers
-        SOF_MARKERS = (
-            # nondifferential Hufmann-coding frames
-            0xc0, 0xc1, 0xc2, 0xc3,
-            # differential Hufmann-coding frames
-            0xc5, 0xc6, 0xc7,
-            # nondifferential arithmetic-coding frames
-            0xc9, 0xca, 0xcb,
-            # differential arithmetic-coding frames
-            0xcd, 0xce, 0xcf,
-        )
-        try:
-            fp.seek(0)
-            size = 2
-            ftype = 0
-            while ftype not in SOF_MARKERS:
-                fp.seek(size, 1)
+        # specification available under
+        # http://www.w3.org/Graphics/JPEG/itu-t81.pdf
+        # Annex B (page 31/35)
+
+        # we are looking for a SOF marker ("start of frame").
+        # skip over the "start of image" marker (imghdr took care of that).
+        fp.seek(2)
+
+        while True:
+            byte = fp.read(1)
+
+            # "All markers are assigned two-byte codes: an X’FF’ byte
+            # followed by a byte which is not equal to 0 or X’FF’."
+            if not byte or ord(byte) != 0xff:
+                raise Exception("Malformed JPEG image.")
+
+            # "Any marker may optionally be preceded by any number
+            # of fill bytes, which are bytes assigned code X’FF’."
+            while ord(byte) == 0xff:
                 byte = fp.read(1)
-                while ord(byte) == 0xff:
-                    byte = fp.read(1)
-                ftype = ord(byte)
-                size = struct.unpack('>H', fp.read(2))[0] - 2
-            # We are at a SOFn block
-            fp.seek(1, 1)  # Skip `precision' byte.
+
+            if ord(byte) not in _JPEG_SOF_MARKERS:
+                # header length parameter takes 2 bytes for all markers
+                length = struct.unpack('>H', fp.read(2))[0]
+                fp.seek(length - 2, 1)
+                continue
+
+            # else...
+            # see Figure B.3 – Frame header syntax (page 35/39) and
+            # Table B.2 – Frame header parameter sizes and values
+            # (page 36/40)
+            fp.seek(3, 1) # skip header length and precision parameters
             height, width = struct.unpack('>HH', fp.read(4))
-        except Exception:
-            return 'jpeg', None, None
+
+            if height == 0:
+                # "Value 0 indicates that the number of lines shall be
+                # defined by the DNL marker [...]"
+                #
+                # DNL is not supported by most applications,
+                # so we won't support it either.
+                raise Exception("JPEG with DNL not supported.")
+
+            break
 
     return fmt, width, height
 
@@ -329,14 +357,6 @@ def find_imagemagick(im=None):
     # On windows, imagemagick was renamed to magick, because
     # convert is system utility for fs manipulation.
     imagemagick_exe = 'convert' if os.name != 'nt' else 'magick'
-
-    # If we have a shipped imagemagick, then we used this one.
-    if BUNDLE_BIN_PATH is not None:
-        executable = os.path.join(BUNDLE_BIN_PATH, imagemagick_exe)
-        if os.name == 'nt':
-            executable += '.exe'
-        if os.path.isfile(executable):
-            return executable
 
     rv = locate_executable(imagemagick_exe)
     if rv is not None:
@@ -363,11 +383,15 @@ def get_quality(source_filename):
     return 85
 
 
-def computed_height(source_image, format, width, actual_width, actual_height):
+def computed_height(source_image, width, actual_width, actual_height):
     # If the file is a JPEG file and the EXIF header shows that the image
     # is rotated, imagemagick will auto-orient the file. That is, a 400x200
     # file where the target width is 100px will *not* be converted to a
     # 100x50 image, but to 100x200.
+
+    with open(source_image, 'rb') as f:
+        format = get_image_info(f)[0]
+
     if format == 'jpeg':
         with open(source_image, 'rb') as image_file:
             exif = read_exif(image_file)
@@ -425,8 +449,8 @@ def make_thumbnail(ctx, source_image, source_url_path, width, height=None,
     if height is None:
         # we can only crop if a height is specified
         crop = False
-        report_height = computed_height(source_image, format, width,
-                                        source_width, source_height)
+        report_height = computed_height(source_image, width, source_width,
+                                        source_height)
 
     # If we are dealing with an actual svg image, we do not actually
     # resize anything, we just return it.  This is not ideal but it's
