@@ -501,6 +501,7 @@ def is_valid_id(value):
         return True
     return (
         '/' not in value and
+        ':' not in value and
         value.strip() == value and
         value.split() == [value] and
         not value.startswith('.')

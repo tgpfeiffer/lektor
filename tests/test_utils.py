@@ -63,3 +63,14 @@ def test_parse_path():
     assert parse_path('/foo/bar') == ['foo', 'bar']
     assert parse_path('/foo/bar/') == ['foo', 'bar']
     assert parse_path('/foo/bar/../stuff') == ['foo', 'bar', 'stuff']
+
+
+def test_valid_id():
+    from lektor.utils import is_valid_id
+    assert is_valid_id('')
+    assert is_valid_id('foo')
+    assert not is_valid_id('foo/bar')
+    assert not is_valid_id('foo:bar')
+    assert not is_valid_id(' foo ')
+    assert not is_valid_id('foo bar')
+    assert not is_valid_id('.foo')
