@@ -2,11 +2,12 @@
 
 import PropTypes from 'prop-types'
 import React from 'react'
+import createReactClass from 'create-react-class'
 import primitiveWidgets from './widgets/primitiveWidgets'
 import multiWidgets from './widgets/multiWidgets'
 import flowWidget from './widgets/flowWidget'
 import fakeWidgets from './widgets/fakeWidgets'
-import {BasicWidgetMixin} from './widgets/mixins'
+import { BasicWidgetMixin } from './widgets/mixins'
 import Component from './components/Component'
 import ToggleGroup from './components/ToggleGroup'
 import i18n from './i18n'
@@ -29,8 +30,10 @@ const widgetComponents = {
   'f-heading': fakeWidgets.HeadingWidget
 }
 
-const FallbackWidget = React.createClass({
+const FallbackWidget = createReactClass({
+  displayName: 'FallbackWidget',
   mixins: [BasicWidgetMixin],
+
   render () {
     return (
       <div>
@@ -45,7 +48,7 @@ const FallbackWidget = React.createClass({
 
 class FieldBox extends Component {
   render () {
-    const {field, value, onChange, placeholder, disabled} = this.props
+    const { field, value, onChange, placeholder, disabled } = this.props
     const className = 'col-md-' + getFieldColumns(field) + ' field-box'
     let innerClassName = 'field'
     let inner

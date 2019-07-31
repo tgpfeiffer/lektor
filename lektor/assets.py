@@ -24,7 +24,7 @@ def get_asset(pad, filename, parent=None):
 
 
 class Asset(SourceObject):
-    # source specific overrides.  the source_filename to none removes
+    # Source specific overrides.  The source_filename to none removes
     # the inherited descriptor.
     source_classification = 'asset'
     source_filename = None
@@ -79,6 +79,7 @@ class Asset(SourceObject):
     def resolve_url_path(self, url_path):
         if not url_path:
             return self
+        # pylint: disable=assignment-from-none
         child = self.get_child(url_path[0], from_url=True)
         if child is not None:
             return child.resolve_url_path(url_path[1:])

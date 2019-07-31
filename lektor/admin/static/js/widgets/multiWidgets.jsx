@@ -1,11 +1,13 @@
 'use strict'
 
 import React from 'react'
+import createReactClass from 'create-react-class'
 import utils from '../utils'
 import i18n from '../i18n'
-import {BasicWidgetMixin} from './mixins'
+import { BasicWidgetMixin } from './mixins'
 
-const CheckboxesInputWidget = React.createClass({
+const CheckboxesInputWidget = createReactClass({
+  displayName: 'CheckboxesInputWidget',
   mixins: [BasicWidgetMixin],
 
   statics: {
@@ -52,7 +54,7 @@ const CheckboxesInputWidget = React.createClass({
   },
 
   render () {
-    let {className, value, placeholder, type, ...otherProps} = this.props // eslint-disable-line no-unused-vars
+    let { className, value, placeholder, type, ...otherProps } = this.props // eslint-disable-line no-unused-vars
     className = (className || '') + ' checkbox'
 
     const choices = this.props.type.choices.map((item) => {
@@ -76,7 +78,8 @@ const CheckboxesInputWidget = React.createClass({
   }
 })
 
-const SelectInputWidget = React.createClass({
+const SelectInputWidget = createReactClass({
+  displayName: 'SelectInputWidget',
   mixins: [BasicWidgetMixin],
 
   onChange (event) {
@@ -84,7 +87,7 @@ const SelectInputWidget = React.createClass({
   },
 
   render () {
-    let {className, type, value, placeholder, onChange, ...otherProps} = this.props // eslint-disable-line no-unused-vars
+    let { className, type, value, placeholder, onChange, ...otherProps } = this.props // eslint-disable-line no-unused-vars
     value = value || placeholder
 
     let choices = this.props.type.choices.map((item) => {

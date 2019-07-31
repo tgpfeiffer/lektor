@@ -15,33 +15,23 @@ cache:
 
 environment:
   matrix:
-    # Node 6
-    - PYTHON: "C:\\Python27"
-      NODE_JS_VERSION: "6"
-    - PYTHON: "C:\\Python35"
-      NODE_JS_VERSION: "6"
-    - PYTHON: "C:\\Python36"
-      NODE_JS_VERSION: "6"
-    # Node 7 is End-of-Life
-    # Node 8
+    # Node 8 - Py 2.7
     - PYTHON: "C:\\Python27"
       NODE_JS_VERSION: "8"
+    # Node 10 - Py 3.5
     - PYTHON: "C:\\Python35"
-      NODE_JS_VERSION: "8"
+      NODE_JS_VERSION: "10"
+    # Node 11 - Py 3.6, 3.7
     - PYTHON: "C:\\Python36"
-      NODE_JS_VERSION: "8"
-    # Node 9
-    - PYTHON: "C:\\Python27"
-      NODE_JS_VERSION: "9"
-    - PYTHON: "C:\\Python35"
-      NODE_JS_VERSION: "9"
-    - PYTHON: "C:\\Python36"
-      NODE_JS_VERSION: "9"
-
+      NODE_JS_VERSION: "11"
+    - PYTHON: "C:\\Python37"
+      NODE_JS_VERSION: "11"
 
 install:
   # some tests require imagemagick
-  - choco install --timeout 600 imagemagick.tool || true
+  - appveyor-retry choco install --timeout 600 imagemagick.tool || true
+  - appveyor-retry choco install --timeout 600 ffmpeg || true
+  - appveyor-retry choco install --timeout 600 codecov || true
   # Install lektor, dependencies and test package requirements
   - "%PYTHON%\\python.exe -m pip install --upgrade pytest"
   - "%PYTHON%\\python.exe -m pip install --upgrade codecov"
@@ -69,9 +59,11 @@ test_script:
   - cd lektor\admin
   - node --version
   - npm --version
-  - npm list
   - npm run lint
   - npm test
+
+after_test:
+  - codecov -f "coverage.xml"
 
 # on_failure:
 #   - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))

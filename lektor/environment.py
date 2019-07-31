@@ -406,7 +406,7 @@ def lookup_from_bag(*args):
 
 class Environment(object):
 
-    def __init__(self, project, load_plugins=True):
+    def __init__(self, project, load_plugins=True, extra_flags=None):
         self.project = project
         self.root_path = os.path.abspath(project.tree)
 
@@ -428,7 +428,9 @@ class Environment(object):
 
         self.jinja_env = CustomJinjaEnvironment(
             autoescape=self.select_jinja_autoescape,
-            extensions=['jinja2.ext.autoescape', 'jinja2.ext.with_'],
+            extensions=['jinja2.ext.autoescape',
+                        'jinja2.ext.with_',
+                        'jinja2.ext.do'],
             loader=jinja2.FileSystemLoader(
                 template_paths)
         )
@@ -473,7 +475,7 @@ class Environment(object):
         # The plugins that are loaded for this environment.  This is
         # modified by the plugin controller and registry methods on the
         # environment.
-        self.plugin_controller = PluginController(self)
+        self.plugin_controller = PluginController(self, extra_flags)
         self.plugins = {}
         self.plugin_ids_by_class = {}
         self.build_programs = []
